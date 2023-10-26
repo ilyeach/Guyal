@@ -21,14 +21,14 @@ $result = mysqli_query($object->dbConnection(), $sql);
     $row = $result->fetch_assoc();
 	
 
-    if ($row>0) {
+    if ($row) {
         header("Location: userdetails.php?er=1");
         exit;
     }
 		
 		else
 		{	
-		$query ="INSERT INTO `user` (`userName`, `mobil`, `email_id`, `password`, `gender`,  `created_at`) VALUES ('$user_name','$user_contact', '$user_email', '$user_password', '$user_grnder', 'NOW()')";
+		$query ="INSERT INTO `user` (`userName`, `mobile`, `email_id`, `password`, `gender`,  `created_at`) VALUES ('$user_name','$user_contact', '$user_email', '$user_password', '$user_grnder', 'NOW()')";
 		
 	    
 		$result=mysqli_query($object->dbConnection(), $query);
@@ -37,6 +37,7 @@ $result = mysqli_query($object->dbConnection(), $sql);
 		header("Location:  login.php?reg=1");
 		exit;
 		} else {
+
 		header("Location:  userdetails.php?error=1");
 		exit;
 		}

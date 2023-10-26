@@ -7,7 +7,7 @@
   <!-- Copyright -->
 </footer>
 		<div class="bg-info text-center text-lg-start fixed-bottom" id="footer"></div>
-		      <script src="../library/js/jquery-3.4.1.slim.min.js" ></script>
+		      <script src="https://code.jquery.com/jquery-3.4.1.slim.min.js"></script>
               <script type="text/javascript">
 					$(document).on('click', '.toggle-password', function() {
 

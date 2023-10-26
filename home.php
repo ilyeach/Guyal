@@ -8,7 +8,20 @@
   <title>To-Do List</title>
   <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
   <style>
-    /* Add your CSS styles here */
+    /* Custom CSS to increase the size of Bootstrap components */
+    body {
+      font-size: 18px; /* Increase the font size */
+    }
+
+    .list-group-item {
+      font-size: 18px; /* Increase the font size */
+      padding: 10px; /* Increase the padding */
+    }
+
+    .btn {
+      font-size: 16px; /* Increase the font size of buttons */
+      padding: 10px 20px; /* Increase the padding of buttons */
+    }
   </style>
 </head>
 
@@ -19,6 +32,7 @@
     <h1>To-Do List</h1>
     <form action="add.php" method="POST">
       <div class="input-group mb-3">
+        <input type="hidden" name="username" value="<?php echo $_SESSION['username']; ?>">
         <input type="text" class="form-control" name="task" placeholder="Add a new task" required>
         <div class="input-group-append">
           <button type="submit" class="btn btn-success">Add</button>
@@ -27,18 +41,29 @@
     </form>
     <form action="remove.php" method="POST">
       <ul class="list-group">
-        <?php
-        if (isset($_SESSION['tasks']) && count($_SESSION['tasks']) > 0) {
-          foreach ($_SESSION['tasks'] as $key => $task) {
-            echo '<li class="list-group-item">';
-            echo '<input type="checkbox" name="task[]" value="' . $task . '">';
-            echo '<span>' . $task . '</span>';
-            echo '<button class="edit-button btn btn-warning btn-sm float-right">Edit</button>';
-            echo '</li>';
-          }
-        }
-        ?>
-      </ul>
+  <?php
+    $username = $_SESSION['username'];
+    $sql = "SELECT * FROM tasks WHERE email_id = '$username'";
+    $result = mysqli_query($object->dbConnection(), $sql);
+
+if ($result && mysqli_num_rows($result) > 0) {
+  while ($row = mysqli_fetch_assoc($result)) {
+    $task = $row['description'];
+    $t_id = $row['id'];
+
+    // Add a hidden input field to store the task ID
+    echo '<li class="list-group-item" data-username="' . $username . '" data-taskid="' . $t_id . '">';
+    echo '<input type="checkbox" name="task[' . $t_id . ']" value="' . $task . '">';
+    echo '<span>' . $task . '</span>';
+    echo '<input type="hidden" name="task_id[' . $t_id . ']" value="' . $t_id . '">';
+    echo '<button class="check-button btn btn-warning btn-sm float-right">Edit</button>';
+    echo '</li>';
+  }
+}
+
+  ?>
+</ul>
+
       <button type="submit" class="btn btn-danger">Remove Selected</button>
     </form>
   </div>
@@ -46,84 +71,67 @@
   <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.3/dist/umd/popper.min.js"></script>
   <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
-<!-- Your HTML code above this line -->
-
-<script>
-  const editButtons = document.querySelectorAll(".edit-button");
-  editButtons.forEach((button) => {
+  <script>
+    document.addEventListener("DOMContentLoaded", function () {
+  const checkButtons = document.querySelectorAll(".check-button");
+  checkButtons.forEach((button) => {
     button.addEventListener("click", function () {
-      // Check if the edit functionality is already applied
-      if (this.classList.contains("editing")) {
-        return;
-      }
-      this.classList.add("editing");
-
       const listItem = this.parentNode;
       const taskText = listItem.querySelector("span");
+
       const inputField = document.createElement("input");
       inputField.type = "text";
-      inputField.className = "edit-task form-control";
+      inputField.className = "form-control edit-task";
       inputField.value = taskText.textContent;
 
-      // Create the Save button before replacing the elements
       const saveButton = document.createElement("button");
       saveButton.className = "save-button btn btn-success btn-sm float-right";
       saveButton.textContent = "Save";
 
-      // Replace the taskText with the inputField
       listItem.replaceChild(inputField, taskText);
-
-      // Append the Save button after the inputField
       listItem.appendChild(saveButton);
+      button.style.display = "none";
 
-      // Attach an event listener to the save button
+      // Disable the "Check" button when editing
+      this.disabled = true;
+
       saveButton.addEventListener("click", function () {
-        taskText.textContent = inputField.value;
+        const editedValue = inputField.value;
+        taskText.textContent = editedValue;
         listItem.replaceChild(taskText, inputField);
-
-        // Remove the Save button after saving
         listItem.removeChild(saveButton);
+        button.style.display = "inline";
 
-        // Remove the editing class to allow editing again
-        button.classList.remove("editing");
+        // Enable the "Check" button after saving
+        button.disabled = false;
 
-        // Add a class to the Edit button to hide it temporarily
-        button.classList.add("hidden-edit-button");
-
-        // Add a delay (e.g., 5000 milliseconds) to show the Edit button again
-        setTimeout(() => {
-          button.classList.remove("hidden-edit-button");
-        }, 5000); // 5000 milliseconds = 5 seconds (you can adjust the time as needed)
+        // Send the edited value to editaction.php using an AJAX request
+        const taskId = listItem.dataset.taskid;
+        const username = listItem.dataset.username;
+        sendEditedValueToServer(taskId, editedValue, username);
       });
     });
   });
-  const element = document.querySelector(".your-css-selector");
-if (element) {
-  // The element exists
-  // You can access and manipulate it here
-} else {
-  // The element does not exist
-  // Handle the case where the element is missing
+});
+
+function sendEditedValueToServer(taskId, editedValue, username) {
+  const xhr = new XMLHttpRequest();
+  const url = "editaction.php";
+
+  xhr.open("POST", url, true);
+  xhr.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
+  xhr.onreadystatechange = function () {
+    if (xhr.readyState === 4 && xhr.status === 200) {
+      // Handle the server's response if needed
+    }
+  };
+
+  const data = "taskId=" + encodeURIComponent(taskId) + "&editedValue=" + encodeURIComponent(editedValue) + "&username=" + encodeURIComponent(username);
+  xhr.send(data);
 }
-const elements = document.querySelectorAll(".your-css-selector");
-if (elements.length > 0) {
-  // At least one element exists with the specified selector
-} else {
-  // No matching elements found
-}
-console.log(document.querySelector(".your-css-selector"));
-</script>
-</body>
-</html>
 
 
-
-
-
-  <div id="footer" class="mt-auto fixed-bottom">
-    <!-- Your footer content goes here -->
-    <?php include('footer.php'); ?>
-  </div>
+  </script>
 </body>
 </html>
 <?php 
@@ -132,3 +140,4 @@ console.log(document.querySelector(".your-css-selector"));
     exit();
   }
 ?>
+ 
